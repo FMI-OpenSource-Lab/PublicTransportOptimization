@@ -15,7 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from transport_optimization_app.views import home_page, shortest_route_view
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("", home_page, name="home"),
+    path("admin/", admin.site.urls),
+    path("shortest-route/", shortest_route_view, name="shortest_route_test"),
 ]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Stop, Route, RouteStop
+from .models import Stop, Route, RouteStop, TravelTime
 
 
 @admin.register(Stop)
@@ -18,3 +18,8 @@ class RouteAdmin(admin.ModelAdmin):
 class RouteStopAdmin(admin.ModelAdmin):
     list_display = ('route', 'stop', 'order')
     ordering = ('route', 'order')
+
+@admin.register(TravelTime)
+class TravelTimeAdmin(admin.ModelAdmin):
+    list_display = ('start_stop', 'end_stop', 'travel_time_seconds', 'distance_meters', 'time_of_day')
+    ordering = ('start_stop', 'end_stop')
