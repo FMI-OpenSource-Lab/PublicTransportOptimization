@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 
 
@@ -30,3 +31,17 @@ class RouteStop(models.Model):
 
     def __str__(self):
         return f"{self.route.name} - {self.stop.name} ({self.order})"
+
+
+class TravelTime(models.Model):
+    start_stop = models.ForeignKey(Stop, related_name='start_stop', on_delete=models.CASCADE)
+    end_stop = models.ForeignKey(Stop, related_name='end_stop', on_delete=models.CASCADE)
+    travel_time_seconds = models.IntegerField(help_text="Time to travel between start and end stop in seconds")
+    distance_meters = models.IntegerField(help_text="Distance between start and end stop in meters")
+    time_of_day = models.TimeField(help_text="Time of day for this travel time", default=datetime.time(0, 0))
+
+    class Meta:
+        unique_together = ('start_stop', 'end_stop', 'time_of_day')
+
+    def __str__(self):
+        return f"{self.start_stop} to {self.end_stop} at {self.time_of_day} - {self.travel_time_seconds}s"
