@@ -18,9 +18,19 @@ class SolutionsHandler:
     @staticmethod
     def __generate_initial_routes(num_routes):
         """ Generate initial routes / solution"""
-        stops = list(Stop.objects.all())
-        random.shuffle(stops)
-        routes = [stops[i::num_routes] for i in range(num_routes)]
+        final_stops = list(Stop.objects.filter(is_final_stop=True))
+        middle_stops = list(Stop.objects.filter(is_final_stop=False))
+
+        # Add the final stops for each route
+        routes = []
+        for i in range(0, num_routes*2, 2):
+            routes.append([final_stops[i % len(final_stops)], final_stops[(i+1) % len(final_stops)]])
+
+        # Distribute the middle stops between the routes
+        random.shuffle(middle_stops)
+        for i in range(num_routes):
+            routes[i][1:1] = middle_stops[i::num_routes]
+
         return routes
 
     @staticmethod
@@ -43,13 +53,28 @@ class SolutionsHandler:
         solution_as_lists = [list(route) for route in solution]
         route1, route2 = random.sample(solution_as_lists, 2)
         if route1 and route2:
-            stop1, stop2 = random.choice(route1), random.choice(route2)
-            while stop1 in route2 or stop2 in route1:
-                stop1, stop2 = random.choice(route1), random.choice(route2)
-            route1.remove(stop1)
-            route2.remove(stop2)
-            self.stop_handler.insert_stop_in_route(route1, stop2)
-            self.stop_handler.insert_stop_in_route(route2, stop1)
+            stop1 = random.choice(route1)
+            while stop1 in route2:
+                stop1 = random.choice(route1)
+
+            if stop1.is_final_stop:
+                stop2_options = [route2[0], route2[len(route2) - 1]]
+                for stop2 in stop2_options:
+                    if stop2 in route1 or stop2 == stop1:
+                        continue
+                    s1_idx = route1.index(stop1)
+                    s2_idx = route2.index(stop2)
+                    route1[s1_idx], route2[s2_idx] = route2[s2_idx], route1[s1_idx]
+                    break
+            else:
+                stop2 = random.choice(route2[1:-1])
+                while stop2 in route1:
+                    stop2 = random.choice(route2[1:-1])
+                route1.remove(stop1)
+                route2.remove(stop2)
+                self.stop_handler.insert_stop_in_route(route1, stop2)
+                self.stop_handler.insert_stop_in_route(route2, stop1)
+
         return solution_as_lists
 
     def evaluate_solution(self, solution):

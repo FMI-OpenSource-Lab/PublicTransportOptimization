@@ -1,8 +1,7 @@
 from mesa import Model
 from mesa.time import RandomActivation
-from ..models import Stop, TravelTime
 from .PassengerAgent import PassengerAgent
-import random
+from ..models import TravelTime
 import datetime
 import networkx as nx
 
@@ -10,29 +9,26 @@ import networkx as nx
 class TransportModel(Model):
     """Transport network simulation model"""
 
-    def __init__(self, num_passengers, routes_solution):
+    def __init__(self, num_passengers, routes_solution, passengers_info):
         self.__num_passengers = num_passengers
         self.__routes_solution = routes_solution
 
         self.schedule = RandomActivation(self)
         self.__times = [datetime.time(8, 0), datetime.time(12, 0), datetime.time(18, 0)]
         self.__travel_time_dict = None
-        self.__graph = nx.DiGraph()
+        self.__graph = nx.Graph()
         self.__time_to_graph_attr_map = {}
 
-        self.__create_passengers()
+        self.__add_passengers_to_schedule(passengers_info)
         self.__create_travel_time_dict()
         self.__fill_routes_to_graph()
 
-    def __create_passengers(self):
+    def __add_passengers_to_schedule(self, passengers_info):
         """Create passengers by choosing random start and end stops"""
-        stops = list(Stop.objects.all())
-        for i in range(0, self.__num_passengers * len(self.__times), len(self.__times)):
-            start_stop, end_stop = random.sample(stops, 2)
-            # For each start and end stop combination we create passengers for three different times of the day
-            for j in range(len(self.__times)):
-                passenger = PassengerAgent(i + j, self, start_stop, end_stop, self.__times[j])
-                self.schedule.add(passenger)
+        for passenger in passengers_info:
+            passenger = PassengerAgent(passenger['index'], self, passenger['start_stop'],
+                                       passenger['end_stop'], passenger['time'])
+            self.schedule.add(passenger)
 
     def __create_travel_time_dict(self):
         """Preload DB data into a dictionary for fast lookups"""
@@ -58,7 +54,7 @@ class TransportModel(Model):
                     travel_time, distance = self.__travel_time_dict.get((str(stop1), str(stop2), self.__times[j]),
                                                                         (None, None))
                     if travel_time and distance:
-                        self.__graph.add_edge(stop1, stop2, {attr_name.format(j): travel_time + distance})
+                        self.__graph.add_edge(stop1, stop2, **{attr_name.format(j): travel_time + distance})
 
     def step(self):
         """Execute one step of the simulation"""
@@ -79,14 +75,11 @@ class TransportModel(Model):
 
     def __find_shortest_path(self, start_stop, end_stop, time_of_the_day):
         """Find the shortest path between two stops in the solution graph"""
-        try:
-            path = nx.shortest_path(self.__graph,
-                                    source=start_stop,
-                                    target=end_stop,
-                                    weight=self.__time_to_graph_attr_map[str(time_of_the_day)])
-            return path
-        except nx.NetworkXNoPath:
-            return None
+        path = nx.shortest_path(self.__graph,
+                                source=start_stop,
+                                target=end_stop,
+                                weight=self.__time_to_graph_attr_map[str(time_of_the_day)])
+        return path
 
     def __get_transfers_recursive(self, path, routes_to_check, current_stop):
         """Recursive method to get the number of transfers in a path"""
@@ -138,9 +131,11 @@ class TransportModel(Model):
 
         if direct_routes:
             best_route = min(direct_routes,
-                             key=lambda r: sum(self.__get_travel_time_and_distance(r, start_stop,
-                                                                                   end_stop, time_of_the_day)))
-            return 0, *self.__get_travel_time_and_distance(best_route, start_stop, end_stop, time_of_the_day)
+                             key=lambda r: sum(self.__get_travel_time_and_distance(self.__routes_solution[r],
+                                                                                   start_stop, end_stop,
+                                                                                   time_of_the_day)))
+            return 0, *self.__get_travel_time_and_distance(self.__routes_solution[best_route], start_stop,
+                                                           end_stop, time_of_the_day)
 
         # If there is no direct route find the shortest one in the graph
         best_route = self.__find_shortest_path(start_stop, end_stop, time_of_the_day)

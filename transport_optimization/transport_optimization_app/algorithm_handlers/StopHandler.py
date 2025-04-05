@@ -58,11 +58,11 @@ class StopHandler:
         return sorted_routes[0]
 
     def insert_stop_in_route(self, route, stop):
-        """ Insert the stop in the best position in the route that minimizes the distance """
+        """ Insert a middle stop in the best position in the route that minimizes the distance """
         min_total_distance = float('inf')
         best_position = 0
 
-        for i in range(len(route) + 1):
+        for i in range(1, len(route)):
             new_route = route[:i] + [stop] + route[i:]
             total_distance = 0
             for j in range(len(new_route) - 1):
@@ -79,6 +79,10 @@ class StopHandler:
         stop_to_routes_count_map = self.__define_stop_importance()
 
         for stop in self.db_stops:
+            # Skip final stops - they are already distributed between the routes
+            if stop.is_final_stop:
+                continue
+
             needed_routes_count = stop_to_routes_count_map[stop]
             routes_count = 0
 

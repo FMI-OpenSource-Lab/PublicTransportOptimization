@@ -1,5 +1,12 @@
-import datetime
 from django.db import models
+
+
+class City(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    country = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name}, {self.country}"
 
 
 class Stop(models.Model):
@@ -7,6 +14,8 @@ class Stop(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     passenger_flow = models.IntegerField(help_text="Average number of passengers per day")
+    is_final_stop = models.BooleanField()
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="stops")
 
     def __str__(self):
         return self.name
@@ -14,7 +23,6 @@ class Stop(models.Model):
 
 class Route(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    frequency = models.IntegerField(help_text="Buses per hour")
 
     def __str__(self):
         return self.name
@@ -38,7 +46,7 @@ class TravelTime(models.Model):
     end_stop = models.ForeignKey(Stop, related_name='end_stop', on_delete=models.CASCADE)
     travel_time_seconds = models.IntegerField(help_text="Time to travel between start and end stop in seconds")
     distance_meters = models.IntegerField(help_text="Distance between start and end stop in meters")
-    time_of_day = models.TimeField(help_text="Time of day for this travel time", default=datetime.time(0, 0))
+    time_of_day = models.TimeField(help_text="Time of day for this travel time")
 
     class Meta:
         unique_together = ('start_stop', 'end_stop', 'time_of_day')
