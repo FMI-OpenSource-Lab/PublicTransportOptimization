@@ -2,22 +2,20 @@ import random
 import datetime
 from .TransportModel import TransportModel
 from .PassengerAgent import PassengerAgent
-from ..models import Stop
 
 
 class SimulationHandler:
-    def __init__(self, num_passengers=1000, steps=10):
+    def __init__(self, chosen_stops, num_passengers=1000, steps=10):
         self.__num_passengers = num_passengers
         self.__steps = steps
-        self.__passengers_info = self.__create_passengers_info()
+        self.__passengers_info = self.__create_passengers_info(chosen_stops)
 
-    def __create_passengers_info(self):
+    def __create_passengers_info(self, chosen_stops):
         """Create passengers info by choosing random start and end stops"""
         passengers_info = []
         times = [datetime.time(8, 0), datetime.time(12, 0), datetime.time(18, 0)]
-        stops = list(Stop.objects.all())
         for i in range(0, self.__num_passengers * len(times), len(times)):
-            start_stop, end_stop = random.sample(stops, 2)
+            start_stop, end_stop = random.sample(chosen_stops, 2)
             # For each start and end stop combination we create passengers for three different times of the day
             for j in range(len(times)):
                 info = {"index": i + j, "start_stop": start_stop, "end_stop": end_stop, "time": times[j]}
@@ -55,4 +53,12 @@ class SimulationHandler:
         # Lower score means better solution
         score = avg_travel_distance + avg_travel_time + avg_transfers - direct_trips_percentage
 
-        return score, direct_trips_percentage
+        result = {
+            'score': score,
+            'average_distance': avg_travel_distance,
+            'average_time': avg_travel_time,
+            'average_transfers': avg_transfers,
+            'direct_trips_percentage': direct_trips_percentage
+        }
+
+        return result

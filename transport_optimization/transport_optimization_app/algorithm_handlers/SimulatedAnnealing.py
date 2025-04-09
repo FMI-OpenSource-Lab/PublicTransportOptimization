@@ -11,13 +11,14 @@ class SimulatedAnnealing:
         self.cooling_rate = 0.99
         self.iterations = 1000
 
-    def execute_optimization(self, num_routes=0):
+    def execute_optimization(self, chosen_stops, num_routes=0, input_solution=None):
         """ Simulated annealing algorithm """
         num_routes = num_routes if num_routes != 0 else len(Route.objects.all())
         if num_routes == 0:
             raise Exception("Number of routes should be greater than zero!")
 
-        initial_solution = self.solutions_handler.get_initial_routes(num_routes)
+        initial_solution = input_solution if input_solution else self.solutions_handler.get_initial_routes(num_routes,
+                                                                                                           chosen_stops)
         print("Initial solution:")
         print(initial_solution)
         current_solution = initial_solution

@@ -1,5 +1,4 @@
 import random
-from ..models import Stop, Route, RouteStop
 from .StopHandler import StopHandler
 
 
@@ -7,19 +6,19 @@ class SolutionsHandler:
     def __init__(self):
         self.stop_handler = StopHandler()
 
-    def __initial_solution_setup(self, routes):
+    def __initial_solution_setup(self, routes, chosen_stops):
         """ Initial solution setup - remove duplicates and set stop importance """
         # Remove duplicate stops from routes (if any)
         routes = [list(dict.fromkeys(route)) for route in routes]
         # Execute stop importance setup
-        routes = self.stop_handler.stop_importance_setup(routes)
+        routes = self.stop_handler.stop_importance_setup(routes, chosen_stops)
         return routes
 
     @staticmethod
-    def __generate_initial_routes(num_routes):
+    def __generate_initial_routes(num_routes, chosen_stops):
         """ Generate initial routes / solution"""
-        final_stops = list(Stop.objects.filter(is_final_stop=True))
-        middle_stops = list(Stop.objects.filter(is_final_stop=False))
+        final_stops = [stop for stop in chosen_stops if stop.is_final_stop]
+        middle_stops = [stop for stop in chosen_stops if not stop.is_final_stop]
 
         # Add the final stops for each route
         routes = []
@@ -33,20 +32,10 @@ class SolutionsHandler:
 
         return routes
 
-    @staticmethod
-    def __get_existing_routes():
-        """ Get existing routes if any """
-        db_routes = Route.objects.all()
-        routes = []
-        for r in db_routes:
-            routes.append([route_stop.stop for route_stop in RouteStop.objects.filter(route=r).order_by('order')])
-        return routes
-
-    def get_initial_routes(self, num_routes):
+    def get_initial_routes(self, num_routes, chosen_stops):
         """ Get initial routes if any in the DB or generate an initial solution """
-        existing_routes = self.__get_existing_routes()
-        initial_solution = existing_routes if existing_routes else self.__generate_initial_routes(num_routes)
-        return self.__initial_solution_setup(initial_solution)
+        initial_solution = self.__generate_initial_routes(num_routes, chosen_stops)
+        return self.__initial_solution_setup(initial_solution, chosen_stops)
 
     def swap_stops(self, solution):
         """ Swap two random stops in two randomly selected routes of a given solution """
@@ -80,12 +69,15 @@ class SolutionsHandler:
     def evaluate_solution(self, solution):
         """ Calculate efficiency of the routes """
         total_time = 0
+        total_distance = 0
         coverage_score = 0
         for route in solution:
             for i in range(len(route) - 1):
                 travel_time = self.stop_handler.get_travel_time(route[i], route[i + 1])
+                travel_distance = self.stop_handler.get_distance(route[i], route[i + 1])
                 total_time += travel_time
+                total_distance += travel_distance
             unique_stops = set(route)
             coverage_score += len(unique_stops)
 
-        return total_time - coverage_score * 10
+        return total_time + total_distance - coverage_score * 10
