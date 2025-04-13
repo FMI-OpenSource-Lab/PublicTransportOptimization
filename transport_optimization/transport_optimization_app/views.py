@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import City, Stop
@@ -15,6 +15,16 @@ class CityViewSet(viewsets.ModelViewSet):
 class StopViewSet(viewsets.ModelViewSet):
     queryset = Stop.objects.all()
     serializer_class = StopSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['name', 'passenger_flow']
+
+
+class CityListView(APIView):
+    def get(self, request):
+        cities = City.objects.all()
+        data = [{"id": city.id, "name": city.name} for city in cities]
+        return Response(data)
 
 
 class RouteOptimizationInputView(APIView):
