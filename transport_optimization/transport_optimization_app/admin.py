@@ -1,16 +1,22 @@
 from django.contrib import admin
-from .models import Stop, Route, RouteStop, TravelTime
+from .models import Stop, Route, RouteStop, TravelTime, City
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'country')
+    search_fields = ('name',)
 
 
 @admin.register(Stop)
 class StopAdmin(admin.ModelAdmin):
-    list_display = ('name', 'latitude', 'longitude', 'passenger_flow')
+    list_display = ('id', 'name', 'latitude', 'longitude', 'passenger_flow', 'is_final_stop', 'city')
     search_fields = ('name',)
 
 
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
-    list_display = ('name', 'frequency')
+    list_display = ('name',)
     search_fields = ('name',)
 
 
@@ -18,6 +24,7 @@ class RouteAdmin(admin.ModelAdmin):
 class RouteStopAdmin(admin.ModelAdmin):
     list_display = ('route', 'stop', 'order')
     ordering = ('route', 'order')
+
 
 @admin.register(TravelTime)
 class TravelTimeAdmin(admin.ModelAdmin):

@@ -14,11 +14,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from transport_optimization_app.views import home_page, shortest_route_view
+from django.urls import path, include
 
 urlpatterns = [
-    path("", home_page, name="home"),
     path("admin/", admin.site.urls),
-    path("shortest-route/", shortest_route_view, name="shortest_route_test"),
+    path("", include("transport_optimization_app.urls")),
 ]
