@@ -10,6 +10,9 @@ from .simulation_handlers.SimulationHandler import SimulationHandler
 class CityViewSet(viewsets.ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'country']
+    ordering_fields = ['name', 'country']
 
 
 class StopViewSet(viewsets.ModelViewSet):
