@@ -10,6 +10,9 @@ from .simulation_handlers.SimulationHandler import SimulationHandler
 class CityViewSet(viewsets.ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'country']
+    ordering_fields = ['name', 'country']
 
 
 class StopViewSet(viewsets.ModelViewSet):
@@ -18,6 +21,13 @@ class StopViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['name', 'passenger_flow']
+
+    def get_queryset(self):
+        queryset = self.queryset
+        city_id = self.request.query_params.get('city')
+        if city_id:
+            queryset = queryset.filter(city_id=city_id)
+        return queryset
 
 
 class CityListView(APIView):
@@ -57,10 +67,17 @@ class RouteOptimizationInputView(APIView):
         initial_solution_metrics = sim_handler.run_simulation(initial_solution_dict)
         final_solution_metrics = sim_handler.run_simulation(final_solution_dict)
 
+        serialized_initial = [
+            StopSerializer(route, many=True).data for route in initial_solution
+        ]
+        serialized_final = [
+            StopSerializer(route, many=True).data for route in final_solution
+        ]
+
         return Response({
             "initial_solution_used": initial_used,
-            "initial_solution": initial_solution,
-            "optimized_solution": final_solution,
+            "initial_solution": serialized_initial,
+            "optimized_solution": serialized_final,
             "initial_solution_metrics": initial_solution_metrics,
             "final_solution_metrics": final_solution_metrics,
         })

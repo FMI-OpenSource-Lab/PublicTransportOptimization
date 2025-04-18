@@ -115,8 +115,7 @@ function AddStopForm() {
             className="select select-bordered w-full"
             value={cityId}
             onChange={(e) => setCityId(e.target.value)}
-            required
-          >
+            required>
             <option value="">Select a city</option>
             {cities.map((city) => (
               <option key={city.id} value={city.id}>
@@ -139,8 +138,7 @@ function AddStopForm() {
         <div className="flex justify-center">
           <button
             type="submit"
-            className="btn btn-primary w-full mt-4"
-          >
+            className="btn btn-primary w-full mt-4">
             Add Stop
           </button>
         </div>

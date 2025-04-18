@@ -6,16 +6,16 @@ class SolutionsHandler:
     def __init__(self):
         self.stop_handler = StopHandler()
 
-    def __initial_solution_setup(self, routes, chosen_stops):
+    def initial_solution_setup(self, routes, chosen_stops):
         """ Initial solution setup - remove duplicates and set stop importance """
         # Remove duplicate stops from routes (if any)
         routes = [list(dict.fromkeys(route)) for route in routes]
         # Execute stop importance setup
-        routes = self.stop_handler.stop_importance_setup(routes, chosen_stops)
+        self.stop_handler.stop_importance_setup(routes, chosen_stops)
         return routes
 
     @staticmethod
-    def __generate_initial_routes(num_routes, chosen_stops):
+    def generate_initial_routes(num_routes, chosen_stops):
         """ Generate initial routes / solution"""
         final_stops = [stop for stop in chosen_stops if stop.is_final_stop]
         middle_stops = [stop for stop in chosen_stops if not stop.is_final_stop]
@@ -31,11 +31,6 @@ class SolutionsHandler:
             routes[i][1:1] = middle_stops[i::num_routes]
 
         return routes
-
-    def get_initial_routes(self, num_routes, chosen_stops):
-        """ Get initial routes if any in the DB or generate an initial solution """
-        initial_solution = self.__generate_initial_routes(num_routes, chosen_stops)
-        return self.__initial_solution_setup(initial_solution, chosen_stops)
 
     def swap_stops(self, solution):
         """ Swap two random stops in two randomly selected routes of a given solution """

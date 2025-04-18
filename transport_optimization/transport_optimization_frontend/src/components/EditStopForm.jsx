@@ -21,9 +21,9 @@ function EditStopForm() {
       .get("http://localhost:8000/api/cities/")
       .then((res) => {
         if (Array.isArray(res.data)) {
-          setCities(res.data); // Expected array response format
+          setCities(res.data);
         } else if (Array.isArray(res.data.results)) {
-          setCities(res.data.results); // Some APIs return a `results` key
+          setCities(res.data.results);
         } else {
           console.warn("Unexpected city response format:", res.data);
           setCities([]);

@@ -17,14 +17,15 @@ class SimulatedAnnealing:
         if num_routes == 0:
             raise Exception("Number of routes should be greater than zero!")
 
-        initial_solution = input_solution if input_solution else self.solutions_handler.get_initial_routes(num_routes,
-                                                                                                           chosen_stops)
-        print("Initial solution:")
-        print(initial_solution)
+        # Get the initial solution (input or generated one)
+        initial_solution = input_solution if input_solution else self.solutions_handler.generate_initial_routes(
+            num_routes, chosen_stops)
+
+        # Set up the initial solution - check for duplicate stops and check important stops presence
+        initial_solution = self.solutions_handler.initial_solution_setup(initial_solution, chosen_stops)
+
         current_solution = initial_solution
         current_score = self.solutions_handler.evaluate_solution(current_solution)
-        print("Initial score:")
-        print(current_score)
         temperature = self.initial_temp
 
         for _ in range(self.iterations):
@@ -36,8 +37,4 @@ class SimulatedAnnealing:
 
             temperature *= self.cooling_rate
 
-        print("Final solution:")
-        print(current_solution)
-        print("Final score:")
-        print(current_score)
         return initial_solution, current_solution
