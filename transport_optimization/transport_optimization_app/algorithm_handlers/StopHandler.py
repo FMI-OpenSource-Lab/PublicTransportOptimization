@@ -99,8 +99,6 @@ class StopHandler:
                 self.insert_stop_in_route(best_route, stop)
                 routes_count += 1
 
-        return routes
-
     def get_travel_time(self, stop1, stop2):
         """ Get the travel time between two stops from the DB (taking into account all times of the day) """
         total_time = 0
