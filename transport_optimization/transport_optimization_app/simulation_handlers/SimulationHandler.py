@@ -45,20 +45,20 @@ class SimulationHandler:
         # Calculate the score of the solution based on the average values for travel time, distance,
         # transfers count and direct trips percentage
         agents_count = len(model.schedule.agents)
-        avg_travel_distance = sum(travel_distances) / agents_count
-        avg_travel_time = sum(travel_times) / agents_count
+        avg_travel_distance = (sum(travel_distances) / agents_count) / 1000
+        avg_travel_time = (sum(travel_times) / agents_count) / 60
         avg_transfers = sum(transfers) / agents_count
         direct_trips_percentage = (sum(1 for t in transfers if t == 0) / agents_count) * 100
 
         # Lower score means better solution
-        score = avg_travel_distance + avg_travel_time + avg_transfers - direct_trips_percentage
+        score = avg_travel_distance + avg_travel_time + avg_transfers
 
         result = {
-            'score': score,
-            'average_distance': avg_travel_distance,
-            'average_time': avg_travel_time,
-            'average_transfers': avg_transfers,
-            'direct_trips_percentage': direct_trips_percentage
+            'score': round(score, 2),
+            'average_distance': round(avg_travel_distance, 2),
+            'average_time': round(avg_travel_time, 2),
+            'average_transfers': round(avg_transfers, 2),
+            'direct_trips_percentage': round(direct_trips_percentage, 2)
         }
 
         return result

@@ -10,11 +10,14 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.4",
     "daisyui": "^5.0.19",
+    "leaflet": "^1.9.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.5.0",
     "react-scripts": "5.0.1",
     "react-select": "^5.10.1",
+    "recharts": "^2.15.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
