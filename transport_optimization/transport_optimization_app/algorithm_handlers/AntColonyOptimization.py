@@ -1,0 +1,117 @@
+import random
+import numpy as np
+from .StopHandler import StopHandler
+from .SolutionsHandler import SolutionsHandler
+
+
+class AntColonyOptimization:
+    def __init__(self, chosen_stops, num_routes, iterations=100, num_ants=20, alpha=1, beta=5, evaporation_rate=0.1):
+        self.__chosen_stops = chosen_stops
+        self.__num_routes = num_routes
+        self.__iterations = iterations
+        self.__num_ants = num_ants
+        self.__alpha = alpha
+        self.__beta = beta
+        self.__evaporation_rate = evaporation_rate
+
+        # Get number of routes the chosen stops should be included in
+        self.__stop_routes_count_map = StopHandler.define_stop_importance(chosen_stops, num_routes)
+
+        # Initialize needed handlers
+        self.__solution_handler = SolutionsHandler()
+
+        # Initialize pheromone levels between all pairs of stops.
+        self.__pheromone = np.ones((len(chosen_stops), len(chosen_stops)))
+
+    def __heuristic(self, first_stop, second_stop):
+        """ Define heuristic desirability: closer stops are better. """
+        distance = self.__solution_handler.stop_handler.get_distance(first_stop, second_stop)
+        return 1.0 / distance
+
+    def __pick_next_stop(self, current_stop, unvisited):
+        """ Choose the next stop based on pheromone and heuristic info. """
+        probabilities = []
+        current_idx = self.__chosen_stops.index(current_stop)
+
+        for stop in unvisited:
+            stop_idx = self.__chosen_stops.index(stop)
+            pheromone_influence = self.__pheromone[current_idx][stop_idx] ** self.__alpha
+            heuristic_influence = self.__heuristic(current_stop, stop) ** self.__beta
+            probabilities.append(pheromone_influence * heuristic_influence)
+
+        # Normalize to get probabilities
+        probabilities = np.array(probabilities)
+        probabilities /= probabilities.sum()
+
+        # Randomly pick based on calculated probabilities
+        return random.choices(unvisited, weights=probabilities, k=1)[0]
+
+    def __construct_solution(self):
+        """ Build a complete solution for one ant """
+        # Add important stops multiple times so they are included in enough routes
+        unvisited = [key for key, value in self.__stop_routes_count_map.items() for _ in range(value)]
+        stops_per_route_count = len(unvisited) // self.__num_routes
+        routes = [[] for _ in range(self.__num_routes)]
+        current_route_idx = 0
+
+        # Start from a random stop
+        current_stop = random.choice(unvisited)
+        unvisited.remove(current_stop)
+        routes[current_route_idx].append(current_stop)
+
+        while unvisited:
+            # Pick next stop based on pheromone + heuristic
+            filtered_unvisited = [s for s in unvisited if s not in routes[current_route_idx]]
+            next_stop = self.__pick_next_stop(current_stop, filtered_unvisited)
+            routes[current_route_idx].append(next_stop)
+            unvisited.remove(next_stop)
+            current_stop = next_stop
+
+            # If current route has enough stops based on the number of routes, move to next route
+            if len(routes[current_route_idx]) >= stops_per_route_count and current_route_idx < self.__num_routes - 1:
+                current_route_idx += 1
+                if unvisited:
+                    current_stop = random.choice(unvisited)
+                    unvisited.remove(current_stop)
+                    routes[current_route_idx].append(current_stop)
+
+        return routes
+
+    def __update_pheromone(self, solutions):
+        """ Update the pheromone matrix """
+        # Evaporate pheromone globally
+        self.__pheromone *= (1 - self.__evaporation_rate)
+
+        for routes, score in solutions:
+            for route in routes:
+                for i in range(len(route) - 1):
+                    a = self.__chosen_stops.index(route[i])
+                    b = self.__chosen_stops.index(route[i + 1])
+
+                    # Add pheromone inversely proportional to solution score
+                    self.__pheromone[a][b] += 1.0 / score
+                    self.__pheromone[b][a] += 1.0 / score
+
+    def execute_ant_colony_optimization(self):
+        """ Execute ant colony optimization """
+        best_solution = None
+        best_score = float('inf')
+
+        for iteration in range(self.__iterations):
+            solutions = []
+
+            for _ in range(self.__num_ants):
+                # Each ant builds a solution
+                routes = self.__construct_solution()
+                score = self.__solution_handler.evaluate_solution(routes)
+                solutions.append((routes, score))
+
+                # Update best solution found
+                if score < best_score:
+                    best_score = score
+                    best_solution = routes
+
+            # Update pheromones based on this generation's solutions
+            self.__update_pheromone(solutions)
+
+        return best_solution
