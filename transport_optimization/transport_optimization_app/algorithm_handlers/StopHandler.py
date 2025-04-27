@@ -1,5 +1,7 @@
 import datetime
-from ..models import TravelTime
+import googlemaps
+from decouple import config
+from ..models import TravelTime, Stop
 
 
 class StopHandler:
@@ -116,3 +118,52 @@ class StopHandler:
             _, distance = tt_data
             total_distance += distance
         return int(total_distance/len(self.__times))
+
+    @classmethod
+    def extract_travel_info(cls, new_stop):
+        future_times = [
+            datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1),
+            datetime.datetime.now().replace(hour=12, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1),
+            datetime.datetime.now().replace(hour=18, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)
+        ]
+
+        stops = Stop.objects.all()
+
+        for stop in stops:
+            if new_stop == stop:
+                continue
+
+            for t in future_times:
+                # Direction: new_stop -> db_stop
+                cls.__extract_api_info(new_stop, stop, t)
+
+                # Direction: db_stop -> new_stop
+                cls.__extract_api_info(stop, new_stop, t)
+
+    @staticmethod
+    def __extract_api_info(first_stop, second_stop, time_of_day):
+        gmaps = googlemaps.Client(key=config('GMAPS_API'))
+        timestamp = int(time_of_day.timestamp())
+
+        result = gmaps.distance_matrix(
+            origins=[(first_stop.latitude, first_stop.longitude)],
+            destinations=[(second_stop.latitude, second_stop.longitude)],
+            mode="driving",
+            departure_time=timestamp
+        )
+
+        if result['status'] == 'OK':
+            elements = result['rows'][0]['elements'][0]
+            if elements['status'] == 'OK':
+                travel_time_seconds = elements['duration']['value']
+                distance_meters = elements['distance']['value']
+
+                TravelTime.objects.update_or_create(
+                    start_stop=first_stop,
+                    end_stop=second_stop,
+                    time_of_day=time_of_day,
+                    defaults={
+                        'travel_time_seconds': travel_time_seconds,
+                        'distance_meters': distance_meters,
+                    }
+                )

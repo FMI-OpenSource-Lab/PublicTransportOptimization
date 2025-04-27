@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .models import City, Stop
 from .serializers import CitySerializer, StopSerializer, OptimizationInputSerializer
 from .algorithm_handlers.SimulatedAnnealing import SimulatedAnnealing
+from .algorithm_handlers.StopHandler import StopHandler
 from .simulation_handlers.SimulationHandler import SimulationHandler
 
 
@@ -21,6 +22,10 @@ class StopViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['name', 'passenger_flow']
+
+    def perform_create(self, serializer):
+        stop = serializer.save()
+        StopHandler.extract_travel_info(stop)
 
     def get_queryset(self):
         queryset = self.queryset
