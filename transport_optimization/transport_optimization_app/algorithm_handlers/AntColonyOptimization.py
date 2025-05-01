@@ -49,31 +49,54 @@ class AntColonyOptimization:
     def __construct_solution(self):
         """ Build a complete solution for one ant """
         # Add important stops multiple times so they are included in enough routes
-        unvisited = [key for key, value in self.__stop_routes_count_map.items() for _ in range(value)]
-        stops_per_route_count = len(unvisited) // self.__num_routes
+        unvisited_final_stops = {s: 0 for s in self.__chosen_stops if s.is_final_stop}
+        unvisited_middle_stops = [s for s in self.__chosen_stops if not s.is_final_stop]
+        stops_per_route_count = (len(unvisited_middle_stops) + 2 * self.__num_routes) // self.__num_routes
         routes = [[] for _ in range(self.__num_routes)]
         current_route_idx = 0
 
-        # Start from a random stop
-        current_stop = random.choice(unvisited)
-        unvisited.remove(current_stop)
+        # Start from a random final stop
+        min_occurrence = min(unvisited_final_stops.values())
+        min_occurrence_final_stops = [stop for stop, count in unvisited_final_stops.items() if count == min_occurrence]
+        current_stop = random.choice(min_occurrence_final_stops)
+        unvisited_final_stops[current_stop] += 1
         routes[current_route_idx].append(current_stop)
 
-        while unvisited:
+        while unvisited_middle_stops:
             # Pick next stop based on pheromone + heuristic
-            filtered_unvisited = [s for s in unvisited if s not in routes[current_route_idx]]
-            next_stop = self.__pick_next_stop(current_stop, filtered_unvisited)
+            next_stop = self.__pick_next_stop(current_stop, unvisited_middle_stops)
             routes[current_route_idx].append(next_stop)
-            unvisited.remove(next_stop)
+            unvisited_middle_stops.remove(next_stop)
             current_stop = next_stop
+
+            # If we need to only add one more stop to the current route, it needs to be a final one
+            is_end_stop_needed_in_middle_route = (len(routes[current_route_idx]) == stops_per_route_count - 1
+                                                  and current_route_idx < self.__num_routes - 1)
+            is_end_stop_needed_in_last_route = (len(routes[current_route_idx]) >= stops_per_route_count - 1
+                                                and current_route_idx == self.__num_routes - 1
+                                                and not unvisited_middle_stops)
+
+            if is_end_stop_needed_in_middle_route or is_end_stop_needed_in_last_route:
+                min_occurrence = min(unvisited_final_stops.values())
+                min_occurrence_final_stops = [stop for stop, count in unvisited_final_stops.items() if
+                                              count == min_occurrence]
+                next_stop = self.__pick_next_stop(current_stop, min_occurrence_final_stops)
+                routes[current_route_idx].append(next_stop)
+                unvisited_final_stops[next_stop] += 1
 
             # If current route has enough stops based on the number of routes, move to next route
             if len(routes[current_route_idx]) >= stops_per_route_count and current_route_idx < self.__num_routes - 1:
                 current_route_idx += 1
-                if unvisited:
-                    current_stop = random.choice(unvisited)
-                    unvisited.remove(current_stop)
+                if unvisited_middle_stops:
+                    min_occurrence = min(unvisited_final_stops.values())
+                    min_occurrence_final_stops = [stop for stop, count in unvisited_final_stops.items() if
+                                                  count == min_occurrence]
+                    current_stop = random.choice(min_occurrence_final_stops)
+                    unvisited_final_stops[current_stop] += 1
                     routes[current_route_idx].append(current_stop)
+
+        # Make sure important stops are present in enough routes for the generated solution
+        self.__solution_handler.stop_handler.stop_importance_setup(routes, self.__chosen_stops)
 
         return routes
 
