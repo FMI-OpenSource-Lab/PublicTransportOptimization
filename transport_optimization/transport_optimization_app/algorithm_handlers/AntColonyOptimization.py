@@ -117,16 +117,19 @@ class AntColonyOptimization:
 
     def execute_ant_colony_optimization(self):
         """ Execute ant colony optimization """
+        iteration_times, iteration_distances = [], []
         best_solution = None
         best_score = float('inf')
 
         for iteration in range(self.__iterations):
             solutions = []
+            best_total_time = float('inf')
+            best_total_distance = float('inf')
 
             for _ in range(self.__num_ants):
                 # Each ant builds a solution
                 routes = self.__construct_solution()
-                score = self.__solution_handler.evaluate_solution(routes)
+                score, total_time, total_distance = self.__solution_handler.evaluate_solution(routes)
                 solutions.append((routes, score))
 
                 # Update best solution found
@@ -134,7 +137,34 @@ class AntColonyOptimization:
                     best_score = score
                     best_solution = routes
 
+                # Update the best time for this iteration
+                total_time = round(total_time / 60, 2)
+                if total_time < best_total_time:
+                    best_total_time = total_time
+
+                # Update the best distance for this iteration
+                total_distance = round(total_distance / 1000, 2)
+                if total_distance < best_total_distance:
+                    best_total_distance = total_distance
+
+            if not best_total_time == float('inf') and not best_total_distance == float('inf'):
+                iteration_times.append(best_total_time)
+                iteration_distances.append(best_total_distance)
+
             # Update pheromones based on this generation's solutions
             self.__update_pheromone(solutions)
 
-        return best_solution
+        algorithm_parameters = {
+            "iterations": self.__iterations,
+            "ants_count": self.__num_ants,
+            "pheromone_influence_alpha": self.__alpha,
+            "heuristic_influence_beta": self.__beta,
+            "evaporation_rate": self.__evaporation_rate
+        }
+
+        iteration_info = {
+            "iteration_times": iteration_times,
+            "iteration_distances": iteration_distances
+        }
+
+        return best_solution, algorithm_parameters, iteration_info

@@ -146,8 +146,11 @@ function RunOptimization() {
       const response = await axios.post(endpoint, payload);
 
       setResults(response.data);
-      setMessage("✅ Optimization completed.");
-      navigate("/results", { state: { results: response.data } });
+      if (selectedAlgorithm === "simulated_annealing") {
+        navigate("/results/sa", { state: { results: response.data } });
+      } else if (selectedAlgorithm === "aco") {
+        navigate("/results/aco", { state: { results: response.data } });
+      }
     } catch (err) {
       console.error(err);
       setMessage("❌ Failed to run optimization.");

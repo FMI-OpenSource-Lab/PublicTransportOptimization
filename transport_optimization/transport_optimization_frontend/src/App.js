@@ -7,7 +7,8 @@ import AddCityForm from "./components/AddCityForm";
 import EditCityForm from "./components/EditCityForm";
 import CityList from "./components/CityList";
 import RunOptimization from "./components/RunOptimization";
-import OptimizationResults from "./components/OptimizationResults";
+import SAResults from "./components/SAResults";
+import ACOResults from "./components/ACOResults";
 
 function App() {
   return (
@@ -101,7 +102,8 @@ function App() {
             <Route path="/cities" element={<CityList />} />
             <Route path="/edit-city/:id" element={<EditCityForm />} />
             <Route path="/optimize" element={<RunOptimization />} />
-            <Route path="/results" element={<OptimizationResults />} />
+            <Route path="/results/sa" element={<SAResults />} />
+            <Route path="/results/aco" element={<ACOResults />} />
           </Routes>
         </main>
       </div>

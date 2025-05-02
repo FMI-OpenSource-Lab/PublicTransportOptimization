@@ -62,10 +62,12 @@ class UnifiedOptimizationInputView(APIView):
             sim_ann = SimulatedAnnealing()
             if initial_solution:
                 input_solution = [[stop_id_to_obj[stop_id] for stop_id in route] for route in initial_solution]
-                initial_solution, final_solution = sim_ann.execute_optimization(stops, num_routes, input_solution)
+                initial_solution, final_solution, algorithm_parameters, iteration_info = \
+                    sim_ann.execute_optimization(stops, num_routes, input_solution)
                 initial_used = True
             else:
-                initial_solution, final_solution = sim_ann.execute_optimization(stops, num_routes)
+                initial_solution, final_solution, algorithm_parameters, iteration_info = \
+                    sim_ann.execute_optimization(stops, num_routes)
                 initial_used = False
 
             initial_solution_dict = {f"route_{i}": route for i, route in enumerate(initial_solution)}
@@ -84,11 +86,13 @@ class UnifiedOptimizationInputView(APIView):
                 "optimized_solution": serialized_final,
                 "initial_solution_metrics": initial_solution_metrics,
                 "final_solution_metrics": final_solution_metrics,
+                "algorithm_parameters": algorithm_parameters,
+                "iteration_info": iteration_info
             })
 
         elif algorithm == "aco":
             aco = AntColonyOptimization(stops, num_routes)
-            final_solution = aco.execute_ant_colony_optimization()
+            final_solution, algorithm_parameters, iteration_info = aco.execute_ant_colony_optimization()
             final_solution_dict = {f"route_{i}": route for i, route in enumerate(final_solution)}
 
             sim_handler = SimulationHandler(stops)
@@ -98,6 +102,8 @@ class UnifiedOptimizationInputView(APIView):
             return Response({
                 "optimized_solution": serialized_final,
                 "final_solution_metrics": final_solution_metrics,
+                "algorithm_parameters": algorithm_parameters,
+                "iteration_info": iteration_info
             })
 
         else:
