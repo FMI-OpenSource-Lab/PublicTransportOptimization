@@ -22,7 +22,7 @@ class StopHandler:
         return travel_time_dict
 
     @staticmethod
-    def __define_stop_importance(chosen_stops, routes_count):
+    def define_stop_importance(chosen_stops, routes_count):
         """ Get number of routes each stop should be included in based on the passenger flow """
         # Get stops sorted by passenger flow
         sorted_stops = sorted(chosen_stops, key=lambda s: s.passenger_flow, reverse=True)
@@ -78,7 +78,7 @@ class StopHandler:
 
     def stop_importance_setup(self, routes, chosen_stops):
         """ Make sure each stop is in a given number of routes depending on its importance(passenger_flow) """
-        stop_to_routes_count_map = self.__define_stop_importance(chosen_stops, len(routes))
+        stop_to_routes_count_map = self.define_stop_importance(chosen_stops, len(routes))
 
         for stop in chosen_stops:
             # Skip final stops - they are already distributed between the routes

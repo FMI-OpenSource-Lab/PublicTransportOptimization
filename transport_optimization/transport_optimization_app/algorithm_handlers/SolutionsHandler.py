@@ -75,4 +75,6 @@ class SolutionsHandler:
             unique_stops = set(route)
             coverage_score += len(unique_stops)
 
-        return total_time + total_distance - coverage_score * 10
+        score = total_time + total_distance - coverage_score * 10
+
+        return score, total_time, total_distance

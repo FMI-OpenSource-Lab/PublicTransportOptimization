@@ -13,6 +13,7 @@ function RunOptimization() {
   const [initialSolutionRoutes, setInitialSolutionRoutes] = useState([]);
   const [message, setMessage] = useState("");
   const [results, setResults] = useState(null);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState("simulated_annealing");
   const navigate = useNavigate();
 
   const isFinal = (val) => val === true || val === "true" || val === 1;
@@ -120,12 +121,15 @@ function RunOptimization() {
     setMessage("");
     setResults(null);
 
-    const usingInitialSolution = initialSolutionRoutes.some((r) => r.length > 0);
+    const usingInitialSolution =
+      selectedAlgorithm === "simulated_annealing" &&
+      initialSolutionRoutes.some((r) => r.length > 0);
 
     if (usingInitialSolution && !validateInitialSolution()) return;
 
     try {
       const payload = {
+        algorithm: selectedAlgorithm,
         city_id: selectedCity?.value,
         stop_ids: selectedStops,
         number_of_routes: usingInitialSolution
@@ -137,11 +141,16 @@ function RunOptimization() {
         payload.initial_solution = initialSolutionRoutes;
       }
 
-      const response = await axios.post("http://localhost:8000/api/optimize/", payload);
+      const endpoint = "http://localhost:8000/api/optimize/";
+
+      const response = await axios.post(endpoint, payload);
 
       setResults(response.data);
-      setMessage("✅ Optimization completed.");
-      navigate("/results", { state: { results: response.data } });
+      if (selectedAlgorithm === "simulated_annealing") {
+        navigate("/results/sa", { state: { results: response.data } });
+      } else if (selectedAlgorithm === "aco") {
+        navigate("/results/aco", { state: { results: response.data } });
+      }
     } catch (err) {
       console.error(err);
       setMessage("❌ Failed to run optimization.");
@@ -168,6 +177,27 @@ function RunOptimization() {
       {message && <p className="mb-4 text-center text-sm text-red-500">{message}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="label">Select Algorithm</label>
+          <Select
+            options={[
+              { value: "simulated_annealing", label: "Simulated Annealing" },
+              { value: "aco", label: "Ant Colony Optimization" },
+            ]}
+            value={{
+              value: selectedAlgorithm,
+              label:
+                selectedAlgorithm === "aco"
+                  ? "Ant Colony Optimization"
+                  : "Simulated Annealing",
+            }}
+            onChange={(val) => {
+              setSelectedAlgorithm(val.value);
+              setInitialSolutionRoutes([]);
+            }}
+          />
+        </div>
+
         <div>
           <label className="label">Select City</label>
           <Select
@@ -225,80 +255,86 @@ function RunOptimization() {
             onChange={(e) => setNumberOfRoutes(parseInt(e.target.value))}
             min="1"
             required
-            disabled={initialSolutionRoutes.some((r) => r.length > 0)}
+            disabled={
+              selectedAlgorithm === "simulated_annealing" &&
+              initialSolutionRoutes.some((r) => r.length > 0)
+            }
           />
         </div>
 
-        <div>
-          <label className="label">Initial Solution (optional)</label>
-          {initialSolutionRoutes.map((route, index) => (
-            <div key={index} className="mb-4 border p-3 rounded shadow-sm bg-gray-50">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-medium">Route {index + 1}</h4>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveRoute(index)}
-                  className="text-sm text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
+        {selectedAlgorithm === "simulated_annealing" && (
+          <div>
+            <label className="label">Initial Solution (optional)</label>
+            {initialSolutionRoutes.map((route, index) => (
+              <div key={index} className="mb-4 border p-3 rounded shadow-sm bg-gray-50">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-medium">Route {index + 1}</h4>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveRoute(index)}
+                    className="text-sm text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
 
-              <DragDropContext onDragEnd={(result) => handleDragEnd(result, index)}>
-                <Droppable droppableId={`route-${index}`}>
-                  {(provided) => (
-                    <ul
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="bg-white border rounded p-2 mb-2 min-h-[40px]"
-                    >
-                      {route.map((stopId, idx) => (
-                        <Draggable key={stopId} draggableId={`${stopId}`} index={idx}>
-                          {(provided) => (
-                            <li
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="bg-gray-100 px-3 py-1 mb-1 rounded flex justify-between items-center"
-                            >
-                              <span>{getStopLabel(stopId)}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleStopRemove(stopId, index)}
-                                className="text-xs text-red-500 ml-2"
+                <DragDropContext onDragEnd={(result) => handleDragEnd(result, index)}>
+                  <Droppable droppableId={`route-${index}`}>
+                    {(provided) => (
+                      <ul
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="bg-white border rounded p-2 mb-2 min-h-[40px]"
+                      >
+                        {route.map((stopId, idx) => (
+                          <Draggable key={stopId} draggableId={`${stopId}`} index={idx}>
+                            {(provided) => (
+                              <li
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="bg-gray-100 px-3 py-1 mb-1 rounded flex justify-between items-center"
                               >
-                                ✕
-                              </button>
-                            </li>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </ul>
-                  )}
-                </Droppable>
-              </DragDropContext>
+                                <span>{getStopLabel(stopId)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStopRemove(stopId, index)}
+                                  className="text-xs text-red-500 ml-2"
+                                >
+                                  ✕
+                                </button>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </ul>
+                    )}
+                  </Droppable>
+                </DragDropContext>
 
-              <Select
-                options={stopOptions.filter((opt) => !route.includes(opt.value))}
-                onChange={(selected) => {
-                  if (selected) handleStopAdd(selected.value, index);
-                }}
-                placeholder="Add stop..."
-              />
+                <Select
+                  options={stopOptions.filter((opt) => !route.includes(opt.value))}
+                  onChange={(selected) => {
+                    if (selected) handleStopAdd(selected.value, index);
+                  }}
+                  placeholder="Add stop..."
+                />
+              </div>
+            ))}
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleAddRoute}
+                className="btn btn-outline btn-primary mt-2"
+                disabled={selectedStops.length === 0}
+              >
+                + Add Route
+              </button>
             </div>
-          ))}
-
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={handleAddRoute}
-              className="btn btn-outline btn-primary mt-2"
-              disabled={selectedStops.length === 0} >
-              + Add Route
-            </button>
           </div>
-        </div>
+        )}
 
         <div>
           <button type="submit" className="btn btn-primary w-full">

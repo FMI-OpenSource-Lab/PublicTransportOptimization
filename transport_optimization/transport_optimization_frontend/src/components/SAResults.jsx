@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import React from "react";
 import SolutionMap from './SolutionMap';
 
-function OptimizationResults() {
+function SAResults() {
   const location = useLocation();
   const navigate = useNavigate();
   const results = location.state?.results;
@@ -24,7 +24,9 @@ function OptimizationResults() {
     final_solution_metrics,
     initial_solution,
     optimized_solution,
-    initial_solution_used
+    initial_solution_used,
+    algorithm_parameters,
+    iteration_info
   } = results;
 
   const chartData = [
@@ -34,6 +36,16 @@ function OptimizationResults() {
     { metric: "Avg Number of Transfers", Initial: initial_solution_metrics.average_transfers, Optimized: final_solution_metrics.average_transfers },
     { metric: "Direct Trips %", Initial: initial_solution_metrics.direct_trips_percentage, Optimized: final_solution_metrics.direct_trips_percentage },
   ];
+
+  const timeData = iteration_info?.iteration_times?.map((time, idx) => ({
+    iteration: idx + 1,
+    time
+  })) || [];
+
+  const distanceData = iteration_info?.iteration_distances?.map((distance, idx) => ({
+    iteration: idx + 1,
+    distance
+  })) || [];
 
   const improvements = [
     {
@@ -76,7 +88,7 @@ function OptimizationResults() {
       <h2 className="text-3xl font-bold mb-6">Results</h2>
 
       {/* General information */}
-      <div className="space-y-4 bg-gray-50 p-4 rounded">
+      <div className="space-y-4 bg-gray-100 p-4 rounded">
         <p>
           <strong>Initial Solution Provided:</strong> {initial_solution_used ? "Yes, by user" : "No, generated automatically"}
         </p>
@@ -87,15 +99,23 @@ function OptimizationResults() {
             Important stops with higher passenger flow were ensured to appear in multiple routes if necessary.
           </p>
         )}
-
-        <p className="text-sm text-gray-700">
-          Metrics were calculated based on a simulation of passengers randomly selecting start and end stops for their trip.
-        </p>
       </div>
 
-      <h3 className="text-2xl font-semibold mb-6">Optimization Results</h3>
+      {/* Algorithm Parameters */}
+      <div className="bg-gray-100 p-4 rounded">
+        <h3 className="text-l font-semibold mb-4">Simulated annealing parameters</h3>
+        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-800">
+          <li><strong>Iterations:</strong> {algorithm_parameters.iterations}</li>
+          <li><strong>Initial temperature:</strong> {algorithm_parameters.initial_temp}</li>
+          <li><strong>Cooling rate:</strong> {algorithm_parameters.cooling_rate}</li>
+        </ul>
+      </div>
 
       {/* Metrics Comparison Table */}
+      <h3 className="text-2xl font-semibold mb-6">Optimization Results</h3>
+      <p className="text-sm text-gray-700">
+        Metrics were calculated based on a simulation of passengers randomly selecting start and end stops for their trip.
+      </p>
       <div className="overflow-x-auto">
         <table className="min-w-full text-left border">
           <thead className="bg-gray-100">
@@ -132,6 +152,46 @@ function OptimizationResults() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Iteration Time Progress */}
+      {timeData.length > 0 && (
+        <div>
+          <h3 className="text-2xl font-semibold mb-4">Total Travel Time Over Iterations</h3>
+          <p className="text-sm text-gray-700">
+            Total travel time for all routes over the executed iterations.
+          </p>
+          <div className="h-80 bg-white p-4 rounded shadow">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timeData}>
+                <XAxis dataKey="iteration" label={{ value: "Iteration", position: "insideBottomRight", offset: -5 }} />
+                <YAxis label={{ value: "Time (min)", angle: -90, position: "insideLeft" }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="time" stroke="#82ca9d" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Iteration Distance Progress */}
+      {distanceData.length > 0 && (
+        <div>
+          <h3 className="text-2xl font-semibold mt-10 mb-4">Total Travel Distance Over Iterations</h3>
+          <p className="text-sm text-gray-700">
+            Total travel distance for all routes over the executed iterations.
+          </p>
+          <div className="h-80 bg-white p-4 rounded shadow">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={distanceData}>
+                <XAxis dataKey="iteration" label={{ value: "Iteration", position: "insideBottomRight", offset: -5 }} />
+                <YAxis label={{ value: "Distance (km)", angle: -90, position: "insideLeft" }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="distance" stroke="#8884d8" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Routes List and Maps */}
       <div className="space-y-12">
@@ -186,4 +246,4 @@ function OptimizationResults() {
   );
 }
 
-export default OptimizationResults;
+export default SAResults;

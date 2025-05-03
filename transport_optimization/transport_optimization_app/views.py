@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .models import City, Stop
 from .serializers import CitySerializer, StopSerializer, OptimizationInputSerializer
 from .algorithm_handlers.SimulatedAnnealing import SimulatedAnnealing
+from .algorithm_handlers.AntColonyOptimization import AntColonyOptimization
 from .algorithm_handlers.StopHandler import StopHandler
 from .simulation_handlers.SimulationHandler import SimulationHandler
 
@@ -42,8 +43,9 @@ class CityListView(APIView):
         return Response(data)
 
 
-class RouteOptimizationInputView(APIView):
+class UnifiedOptimizationInputView(APIView):
     def post(self, request):
+        algorithm = request.data.get("algorithm", "simulated_annealing")
         serializer = OptimizationInputSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -51,38 +53,60 @@ class RouteOptimizationInputView(APIView):
         data = serializer.validated_data
         stop_ids = data['stop_ids']
         num_routes = data['number_of_routes']
-        initial_solution = data.get('initial_solution')
-
         stops = list(Stop.objects.filter(id__in=stop_ids))
-        stop_id_to_obj = {stop.id: stop for stop in stops}
 
-        sim_ann = SimulatedAnnealing()
-        if initial_solution:
-            input_solution = [[stop_id_to_obj[stop_id] for stop_id in route] for route in initial_solution]
-            initial_solution, final_solution = sim_ann.execute_optimization(stops, num_routes, input_solution)
-            initial_used = True
+        if algorithm == "simulated_annealing":
+            initial_solution = data.get("initial_solution")
+            stop_id_to_obj = {stop.id: stop for stop in stops}
+
+            sim_ann = SimulatedAnnealing()
+            if initial_solution:
+                input_solution = [[stop_id_to_obj[stop_id] for stop_id in route] for route in initial_solution]
+                initial_solution, final_solution, algorithm_parameters, iteration_info = \
+                    sim_ann.execute_optimization(stops, num_routes, input_solution)
+                initial_used = True
+            else:
+                initial_solution, final_solution, algorithm_parameters, iteration_info = \
+                    sim_ann.execute_optimization(stops, num_routes)
+                initial_used = False
+
+            initial_solution_dict = {f"route_{i}": route for i, route in enumerate(initial_solution)}
+            final_solution_dict = {f"route_{i}": route for i, route in enumerate(final_solution)}
+
+            sim_handler = SimulationHandler(stops)
+            initial_solution_metrics = sim_handler.run_simulation(initial_solution_dict)
+            final_solution_metrics = sim_handler.run_simulation(final_solution_dict)
+
+            serialized_initial = [StopSerializer(route, many=True).data for route in initial_solution]
+            serialized_final = [StopSerializer(route, many=True).data for route in final_solution]
+
+            return Response({
+                "initial_solution_used": initial_used,
+                "initial_solution": serialized_initial,
+                "optimized_solution": serialized_final,
+                "initial_solution_metrics": initial_solution_metrics,
+                "final_solution_metrics": final_solution_metrics,
+                "algorithm_parameters": algorithm_parameters,
+                "iteration_info": iteration_info
+            })
+
+        elif algorithm == "aco":
+            aco = AntColonyOptimization(stops, num_routes)
+            final_solution, algorithm_parameters, iteration_info = aco.execute_ant_colony_optimization()
+            final_solution_dict = {f"route_{i}": route for i, route in enumerate(final_solution)}
+
+            sim_handler = SimulationHandler(stops)
+            final_solution_metrics = sim_handler.run_simulation(final_solution_dict)
+            serialized_final = [StopSerializer(route, many=True).data for route in final_solution]
+
+            return Response({
+                "optimized_solution": serialized_final,
+                "final_solution_metrics": final_solution_metrics,
+                "algorithm_parameters": algorithm_parameters,
+                "iteration_info": iteration_info
+            })
+
         else:
-            initial_solution, final_solution = sim_ann.execute_optimization(stops, num_routes)
-            initial_used = False
+            return Response({"error": "Unknown algorithm selected."}, status=400)
 
-        initial_solution_dict = {f"route_{i}": route for i, route in enumerate(initial_solution)}
-        final_solution_dict = {f"route_{i}": route for i, route in enumerate(final_solution)}
 
-        sim_handler = SimulationHandler(stops)
-        initial_solution_metrics = sim_handler.run_simulation(initial_solution_dict)
-        final_solution_metrics = sim_handler.run_simulation(final_solution_dict)
-
-        serialized_initial = [
-            StopSerializer(route, many=True).data for route in initial_solution
-        ]
-        serialized_final = [
-            StopSerializer(route, many=True).data for route in final_solution
-        ]
-
-        return Response({
-            "initial_solution_used": initial_used,
-            "initial_solution": serialized_initial,
-            "optimized_solution": serialized_final,
-            "initial_solution_metrics": initial_solution_metrics,
-            "final_solution_metrics": final_solution_metrics,
-        })
