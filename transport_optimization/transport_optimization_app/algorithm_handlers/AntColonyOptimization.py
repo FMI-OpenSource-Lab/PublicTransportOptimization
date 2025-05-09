@@ -5,11 +5,11 @@ from .SolutionsHandler import SolutionsHandler
 
 
 class AntColonyOptimization:
-    def __init__(self, chosen_stops, num_routes, iterations=100, num_ants=20, alpha=1, beta=5, evaporation_rate=0.1):
+    def __init__(self, chosen_stops, num_routes, iterations=200, alpha=2, beta=3, evaporation_rate=0.5):
         self.__chosen_stops = chosen_stops
         self.__num_routes = num_routes
         self.__iterations = iterations
-        self.__num_ants = num_ants
+        self.__num_ants = 2 * len(chosen_stops)
         self.__alpha = alpha
         self.__beta = beta
         self.__evaporation_rate = evaporation_rate
@@ -115,9 +115,9 @@ class AntColonyOptimization:
                     self.__pheromone[a][b] += 1.0 / score
                     self.__pheromone[b][a] += 1.0 / score
 
-    def execute_ant_colony_optimization(self):
+    def execute_optimization(self):
         """ Execute ant colony optimization """
-        iteration_times, iteration_distances = [], []
+        iteration_times, iteration_distances, iteration_best_scores = [], [], []
         best_solution = None
         best_score = float('inf')
 
@@ -151,6 +151,8 @@ class AntColonyOptimization:
                 iteration_times.append(best_total_time)
                 iteration_distances.append(best_total_distance)
 
+            iteration_best_scores.append(min(solutions, key=lambda x: x[1])[1])
+
             # Update pheromones based on this generation's solutions
             self.__update_pheromone(solutions)
 
@@ -164,7 +166,8 @@ class AntColonyOptimization:
 
         iteration_info = {
             "iteration_times": iteration_times,
-            "iteration_distances": iteration_distances
+            "iteration_distances": iteration_distances,
+            "iteration_best_scores": iteration_best_scores
         }
 
         return best_solution, algorithm_parameters, iteration_info

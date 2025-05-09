@@ -236,7 +236,7 @@ function RunOptimization() {
                   />
                   <span>
                     {stop.name}{" "}
-                    <span className={isFinal(stop.is_final_stop) ? "text-green-600" : "text-yellow-600"}>
+                    <span className={isFinal(stop.is_final_stop) ? "text-green-300" : "text-blue-300"}>
                       ({isFinal(stop.is_final_stop) ? "Final" : "Not Final"})
                     </span>
                   </span>

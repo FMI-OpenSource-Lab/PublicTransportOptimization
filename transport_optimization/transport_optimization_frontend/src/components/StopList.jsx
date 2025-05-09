@@ -82,7 +82,7 @@ function StopList() {
               <th>Latitude</th>
               <th>Longitude</th>
               <th>Flow</th>
-              <th>Final?</th>
+              <th>Final</th>
               <th>City</th>
               <th>Actions</th>
             </tr>
