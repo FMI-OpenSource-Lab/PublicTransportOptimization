@@ -92,7 +92,7 @@ class UnifiedOptimizationInputView(APIView):
 
         elif algorithm == "aco":
             aco = AntColonyOptimization(stops, num_routes)
-            final_solution, algorithm_parameters, iteration_info = aco.execute_ant_colony_optimization()
+            final_solution, algorithm_parameters, iteration_info = aco.execute_optimization()
             final_solution_dict = {f"route_{i}": route for i, route in enumerate(final_solution)}
 
             sim_handler = SimulationHandler(stops)

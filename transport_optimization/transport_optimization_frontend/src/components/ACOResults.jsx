@@ -44,6 +44,11 @@ function ACOResults() {
     distance
   })) || [];
 
+  const scoresData = iteration_info?.iteration_best_scores?.map((score, idx) => ({
+    iteration: idx + 1,
+    score
+  })) || [];
+
   const renderRoute = (route) => (
     <div className="flex flex-wrap items-center gap-2">
       {route.map((stop, idx) => (
@@ -131,6 +136,26 @@ function ACOResults() {
                 <YAxis label={{ value: "Distance (km)", angle: -90, position: "insideLeft" }} />
                 <Tooltip />
                 <Line type="monotone" dataKey="distance" stroke="#8884d8" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Iteration Scores Progress */}
+      {scoresData.length > 0 && (
+        <div>
+          <h3 className="text-2xl font-semibold mt-10 mb-4">Scores Over Iterations</h3>
+          <p className="text-sm text-gray-700">
+            Best scores over the executed iterations.
+          </p>
+          <div className="h-80 bg-white p-4 rounded shadow">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={scoresData}>
+                <XAxis dataKey="iteration" label={{ value: "Iteration", position: "insideBottomRight", offset: -5 }} />
+                <YAxis label={{ value: "Raw Score", angle: -90, position: "insideLeft" }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="score" stroke="#8884d8" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

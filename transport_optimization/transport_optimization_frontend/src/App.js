@@ -16,7 +16,7 @@ function App() {
       <div className="min-h-screen bg-gray-100">
         <nav className="bg-white shadow-md">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-primary">Transport Manager</h1>
+            <h1 className="text-2xl font-bold text-primary">SmartRoute</h1>
 
             <ul className="flex space-x-6 items-center text-base">
               <li>
@@ -125,7 +125,7 @@ function Home() {
   return (
     <div className="text-center space-y-16 min-h-screen px-4 py-12">
       <h2 className="text-5xl font-extrabold text-primary mb-4 fade-in opacity-0 transition-all duration-1000">
-        Welcome to the Public Transport Optimization App
+        Welcome to the Public Transport Optimization App SmartRoute
       </h2>
 
       <p className="max-w-3xl mx-auto text-lg text-gray-600 fade-in opacity-0 transition-all duration-1000 delay-200">
