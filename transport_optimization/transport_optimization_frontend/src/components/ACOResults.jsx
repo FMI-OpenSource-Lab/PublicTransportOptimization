@@ -64,7 +64,7 @@ function ACOResults() {
 
   return (
     <div className="max-w-6xl mx-auto mt-10 p-6 bg-white rounded shadow space-y-8">
-      <h2 className="text-3xl font-bold mb-6">ACO Optimization Results</h2>
+      <h2 className="text-3xl font-bold mb-6">Results</h2>
 
       {/* Algorithm Parameters */}
       <div className="bg-gray-100 p-4 rounded">
