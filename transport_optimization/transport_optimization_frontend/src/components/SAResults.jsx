@@ -49,17 +49,17 @@ function SAResults() {
 
   const improvements = [
     {
-      label: "Average Distance",
+      label: "Average Distance (km)",
       value: final_solution_metrics.average_distance - initial_solution_metrics.average_distance,
       positiveIsGood: false,
     },
     {
-      label: "Average Time",
+      label: "Average Time (min)",
       value: final_solution_metrics.average_time - initial_solution_metrics.average_time,
       positiveIsGood: false,
     },
     {
-      label: "Average Transfers",
+      label: "Average Number of Transfers",
       value: final_solution_metrics.average_transfers - initial_solution_metrics.average_transfers,
       positiveIsGood: false,
     },
@@ -106,7 +106,7 @@ function SAResults() {
         <h3 className="text-l font-semibold mb-4">Simulated annealing parameters</h3>
         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-800">
           <li><strong>Iterations:</strong> {algorithm_parameters.iterations}</li>
-          <li><strong>Initial temperature:</strong> {algorithm_parameters.initial_temp}</li>
+          <li><strong>Initial temperature:</strong> {algorithm_parameters.initial_temp.toFixed(2)}</li>
           <li><strong>Cooling rate:</strong> {algorithm_parameters.cooling_rate}</li>
         </ul>
       </div>
